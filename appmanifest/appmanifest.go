@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/groob/plist"
+	"github.com/micromdm/plist"
 )
 
 // DefaultMD5Size is the default size of each file chunk that needs to be hashed

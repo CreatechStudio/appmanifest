@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"regexp"
 	"testing"
 )
 
@@ -53,4 +55,53 @@ func Benchmark100MB(b *testing.B) {
 
 func Benchmark1000MB(b *testing.B) {
 	benchmarkSize(b, DefaultMD5Size*100)
+}
+
+func TestCreateAppManifestMD5SizeSmallFileUsesFileSize(t *testing.T) {
+	tmp, err := os.CreateTemp("", "appmanifest-small-*.pkg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmp.Name())
+
+	const fileSize = 1024
+	if err := tmp.Truncate(fileSize); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	if err := createAppManifest(tmp.Name(), "", &out, DefaultMD5Size); err != nil {
+		t.Fatal(err)
+	}
+
+	if !regexp.MustCompile(`(?s)<key>md5-size</key>\s*<integer>1024</integer>`).MatchString(out.String()) {
+		t.Fatalf("expected md5-size to be file size %d, plist was:\n%s", fileSize, out.String())
+	}
+}
+
+func TestCreateAppManifestMD5SizeLargeFileUsesDefaultChunkSize(t *testing.T) {
+	tmp, err := os.CreateTemp("", "appmanifest-large-*.pkg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmp.Name())
+
+	if err := tmp.Truncate(DefaultMD5Size + 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	if err := createAppManifest(tmp.Name(), "", &out, DefaultMD5Size); err != nil {
+		t.Fatal(err)
+	}
+
+	if !regexp.MustCompile(`(?s)<key>md5-size</key>\s*<integer>10485760</integer>`).MatchString(out.String()) {
+		t.Fatalf("expected md5-size to be %d for files larger than 10MB, plist was:\n%s", DefaultMD5Size, out.String())
+	}
 }

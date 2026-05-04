@@ -1,26 +1,16 @@
 GO    		:= go
 glide    	:= glide
 release    	:= ./release.sh
-.PHONY: all clean appmanifest poke certhelper
+.PHONY: all clean appmanifest
 
 all: clean buildall
 
 clean: 
 	rm -rf ./build/*
 
-buildall: appmanifest poke certhelper
+buildall: appmanifest
 
 appmanifest: 
-	rm -rf ./build/appmanifest
+	rm -rf ./build/appmanifest ./build/appmanifest-darwin-amd64 ./build/appmanifest-darwin-arm64
 	@echo ">> building appmanifest"
 	cd ./appmanifest && $(release)
-
-poke: 
-	rm -rf ./build/poke
-	@echo ">> building poke"
-	cd ./poke && $(release)
-
-certhelper: 
-	rm -rf ./build/certhelper
-	@echo ">> building certhelper"
-	cd ./certhelper && $(release)
